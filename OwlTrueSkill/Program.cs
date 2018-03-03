@@ -17,12 +17,14 @@ namespace OwlTrueSkill
         {
             var redditText = args.Contains("reddit");
             var debug = args.Contains("debug");
+            var stageNames = args.FirstOrDefault(a => a.StartsWith("stage="))?.Split('=')[1].Split(',');
 
             var scheduleText = GetUrl("schedule", "https://api.overwatchleague.com/schedule").Result;
             JObject response = JObject.Parse(scheduleText);
             var stages = response["data"]["stages"].ToObject<StageData[]>();
 
             var results = from stage in stages
+                          where stageNames == null || stageNames.Any(x => x.Equals(stage.Name, StringComparison.OrdinalIgnoreCase))
                           from match in stage.Matches
                           where match.State == "CONCLUDED"
                           orderby match.StartDateTS
@@ -158,28 +160,37 @@ namespace OwlTrueSkill
 
             IEnumerable<KeyValuePair<int, Rating>> ratingsList = ratings;
 
+            var playerResults = from kv in ratingsList
+                          let p = playerDb[kv.Key]
+                          let t = teamDb[p.Team.Id]
+                          let s = statDb[kv.Key]
+                          select new
+                          {
+                              Team = t.Name,
+                              Player = p.Player.Name,
+                              Wins = s.Win,
+                              Loses = s.Lose,
+                              Draws = s.Draw,
+                              Rating = kv.Value.ConservativeRating,
+                              Detail = kv.Value
+                          };
+
             if (redditText)
             {
                 Console.WriteLine("Rank|Team|Player|Wins|Loses|Draws|Rating|Rating Detail");
                 Console.WriteLine(":--|:--|:--|:-:|:-:|:-:|:-:|:--");
             }
 
-            ratingsList = ratings.Where(kv => statDb[kv.Key].Games >= 10);
-
-            foreach (var kv in ratingsList.OrderByDescending(r => r.Value.ConservativeRating))
+            foreach (var r in playerResults.OrderByDescending(x => x.Rating))
             {
                 rank += 1;
-                var p = playerDb[kv.Key];
-                var t = teamDb[p.Team.Id];
-                var s = statDb[kv.Key];
-
                 if (redditText)
                 {
-                    Console.WriteLine($"{rank}|{t.Name}|{p.Player.Name}|{s.Win}|{s.Lose}|{s.Draw}|{kv.Value.ConservativeRating:f}|{kv.Value}");
+                    Console.WriteLine($"{rank}|{r.Team}|{r.Player}|{r.Wins}|{r.Loses}|{r.Draws}|{r.Rating:f}|{r.Detail}");
                 }
                 else
                 {
-                    Console.WriteLine($"{rank,3} {t.Name,22} {p.Player.Name,11} [{s.Win,2}-{s.Lose,2}-{s.Draw,2}] {kv.Value.ConservativeRating,7:f} ({kv.Value})");
+                    Console.WriteLine($"{rank,3} {r.Team,22} {r.Player,11} [{r.Wins,2}-{r.Loses,2}-{r.Draws,2}] {r.Rating,7:f} ({r.Detail})");
                 }
             }
         }
