@@ -6,8 +6,8 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{857E0865-757E-4670-B16F-55648DCB7D31}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>owstats</RootNamespace>
-    <AssemblyName>owstats</AssemblyName>
+    <RootNamespace>OwlTrueSkill</RootNamespace>
+    <AssemblyName>owltrueskill</AssemblyName>
     <TargetFrameworkVersion>v4.7.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>

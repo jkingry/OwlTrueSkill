@@ -9,12 +9,14 @@ using Moserware.Skills;
 using Moserware.Skills.TrueSkill;
 using Newtonsoft.Json.Linq;
 
-namespace owstats
+namespace OwlTrueSkill
 {
     class Program
     {
         static void Main(string[] args)
         {
+            var redditText = args.Contains("reddit");
+            var debug = args.Contains("debug");
 
             var scheduleText = GetUrl("schedule", "https://api.overwatchleague.com/schedule").Result;
             JObject response = JObject.Parse(scheduleText);
@@ -136,7 +138,7 @@ namespace owstats
 
                 var newRatings = calculator.CalculateNewRatings(gameInfo, Teams.Concat(team1, team2), team1Points, team2Points);
 
-                Console.WriteLine($"{r.match.Competitors[0].Name} vs {r.match.Competitors[1].Name} [{r.game.Points[0]} to {r.game.Points[1]}] {result}");
+                if (debug) Console.WriteLine($"{r.match.Competitors[0].Name} vs {r.match.Competitors[1].Name} [{r.game.Points[0]} to {r.game.Points[1]}] {result}");
 
                 foreach(var rating in newRatings)
                 {
@@ -144,26 +146,42 @@ namespace owstats
                     var player = playerDb[pid];
                     var team = teamDb[player.Team.Id];
                     var oldRating = ratings[pid];
-                    Console.WriteLine($"  {team.Name} {player.Player.Name} : {oldRating.ConservativeRating} to {rating.Value.ConservativeRating}");
+                    if (debug) Console.WriteLine($"  {team.Name} {player.Player.Name} : {oldRating.ConservativeRating} to {rating.Value.ConservativeRating}");
 
                     ratings[pid] = rating.Value;
                 }
             }
 
-            Console.WriteLine("Finished");
+            if (debug) Console.WriteLine("Finished");
 
             var rank = 0;
 
-            foreach(var kv in ratings.OrderByDescending(r => r.Value.ConservativeRating))
+            IEnumerable<KeyValuePair<int, Rating>> ratingsList = ratings;
+
+            if (redditText)
+            {
+                Console.WriteLine("Rank|Team|Player|Wins|Loses|Draws|Rating|Rating Detail");
+                Console.WriteLine(":--|:--|:--|:-:|:-:|:-:|:-:|:--");
+            }
+
+            ratingsList = ratings.Where(kv => statDb[kv.Key].Games >= 10);
+
+            foreach (var kv in ratingsList.OrderByDescending(r => r.Value.ConservativeRating))
             {
                 rank += 1;
                 var p = playerDb[kv.Key];
                 var t = teamDb[p.Team.Id];
                 var s = statDb[kv.Key];
-                Console.WriteLine($"{rank,3} {t.Name,22} {p.Player.Name,11} [{s.Win,2}-{s.Lose,2}-{s.Draw,2}] {kv.Value.ConservativeRating,7:f} ({kv.Value})");
-            }
 
-            Console.ReadKey();
+                if (redditText)
+                {
+                    Console.WriteLine($"{rank}|{t.Name}|{p.Player.Name}|{s.Win}|{s.Lose}|{s.Draw}|{kv.Value.ConservativeRating:f}|{kv.Value}");
+                }
+                else
+                {
+                    Console.WriteLine($"{rank,3} {t.Name,22} {p.Player.Name,11} [{s.Win,2}-{s.Lose,2}-{s.Draw,2}] {kv.Value.ConservativeRating,7:f} ({kv.Value})");
+                }
+            }
         }
 
 
@@ -226,7 +244,6 @@ namespace owstats
     class PlayerPlayerData
     {
         public int Id { get; set; }
-
         public string Handle { get; set; }
         public string Name { get; set; }
     }
@@ -240,5 +257,6 @@ namespace owstats
     class PlayerStat
     {
         public int Win, Lose, Draw;
+        public int Games => Win + Lose + Draw;
     }
 }

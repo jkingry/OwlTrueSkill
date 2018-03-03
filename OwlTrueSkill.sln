@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27130.2036
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "owstats", "owstats\owstats.csproj", "{857E0865-757E-4670-B16F-55648DCB7D31}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OwlTrueSkill", "owstats\OwlTrueSkill.csproj", "{857E0865-757E-4670-B16F-55648DCB7D31}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Skills", "Skills\Skills\Skills.csproj", "{15AD1345-984C-48ED-AF9A-2EAB44E5AA2B}"
 EndProject
